@@ -28,7 +28,7 @@ The layoffs data gathered from 2020-03-11 to 2023-03-06
 
 <img width="113" alt="{64466A57-8B1B-4008-92EA-FF48474F0C62}" src="https://github.com/user-attachments/assets/743c517e-df56-4266-95c4-94b987c9ad23">
 
-```
+```sql
 select min(`date`), max(`date`)
 from layoffs_staging2;
 ```
@@ -37,7 +37,7 @@ from layoffs_staging2;
 
 <img width="94" alt="{3DABB79E-21DB-4ABE-AD45-2467B6CF1219}" src="https://github.com/user-attachments/assets/cce5fe98-dee6-4ce0-84b7-a56e92d5ad74">
 
-```
+```sql
 select company, sum(total_laid_off) total
 from layoffs_staging2
 group by company
@@ -48,7 +48,7 @@ order by total desc;
 
 <img width="590" alt="{1B235845-CB3C-4EE3-BCAC-19CA41D18156}" src="https://github.com/user-attachments/assets/bc9e32db-1657-4a97-939f-ea183948b0eb">
 
-```
+```sql
 select * from layoffs_staging2
 where percentage_laid_off = 1
 order by total_laid_off desc
@@ -60,7 +60,7 @@ limit 10;
 <img width="196" alt="{2568885E-1490-4EC3-8680-E7B4DB52444B}" src="https://github.com/user-attachments/assets/3fe020ac-fd3f-4524-bef4-64beb8d6bd52">
 
 > From the table, the industry impacted the most is consumer with 45182 employees laid off.
-```
+```sql
 select industry, sum(total_laid_off), count(distinct company) total_companies
 from layoffs_staging2
 group by industry
@@ -71,7 +71,7 @@ order by sum(total_laid_off) desc;
 
 <img width="140" alt="{CABA25DE-D94C-4A9C-B2EC-D7E5A1B470B1}" src="https://github.com/user-attachments/assets/720fba38-b31b-422b-96fc-5c5f91e5b863">
 
-```
+```sql
 select year(`date`), sum(total_laid_off)
 from layoffs_staging2
 group by year(`date`)
@@ -82,7 +82,7 @@ order by year(`date`) desc;
 
 <img width="145" alt="{EB53CD8E-FF2B-49AE-9AFC-7F101137D1E7}" src="https://github.com/user-attachments/assets/7861cd3e-4dcf-444f-a83b-4fbbec7bff8c">
 
-```
+```sql
 -- cte rolling total of employee laid off each month
 with Rolling_total as
 (
@@ -114,7 +114,7 @@ This query calculates a rolling total of employees laid off each month using a C
 
 <img width="190" alt="{FE0D2CA3-6770-4409-86A0-8FC4FA9460E7}" src="https://github.com/user-attachments/assets/f8559637-6715-4d01-a175-ac98c9296b5b">
 
-```
+```sql
 with Company_year (company, years, total_laid_off) as
 (
 select company, year(`date`), sum(total_laid_off)
@@ -136,7 +136,7 @@ How It Works Overall
 
 Query Explanation
 1. First CTE: Company_year
-```
+```sql
 WITH Company_year (company, years, total_laid_off) AS (
     SELECT 
         company, 
@@ -154,7 +154,7 @@ Breakdown:
 - GROUP BY company, YEAR('date'): Groups the data by company and year to ensure the aggregation SUM is performed for each company-year combination.
 
 2. Second CTE: company_year_rank
-```
+```sql
 , company_year_rank AS (
     SELECT 
         *, 
@@ -172,7 +172,7 @@ Breakdown:
 - WHERE years IS NOT NULL: Ensures that only rows with valid years are included.
 
 3. Final Query:
-```
+```sql
   SELECT * 
   FROM company_year_rank
   WHERE ranking <= 5;
