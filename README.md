@@ -95,6 +95,20 @@ order by month asc
 select `month`, total_emp, sum(total_emp) over(order by `month`) as rolling_total
 from Rolling_total;
 ```
+This query calculates a rolling total of employees laid off each month using a Common Table Expression (CTE) and a window function. We use CTE as it can be thought of as a way to prepare or pre-filter data for further processing in subsequent queries.
+
+1. First Filtering (in the CTE):
+- The CTE (Rolling_total) filters and aggregates the data from the original table (layoffs_staging2).
+- Specifically, it:
+  - Extracts the year and month (SUBSTRING(date, 1, 7)).
+  - Excludes rows with NULL months (WHERE SUBSTRING(date, 1, 7) IS NOT NULL).
+  - Groups the data by month and calculates total layoffs for each (SUM(total_laid_off)).
+
+2. Second Filtering (in the main query):
+- After defining the pre-processed data (Rolling_total), the main query applies additional calculations or filters.
+- In this case, the main query:
+  - Retrieves month and total_emp from the CTE.
+  - Calculates the rolling total (SUM(total_emp) OVER (ORDER BY month)).
 
 #### What are the top 5 companies laid off each year?
 
@@ -115,3 +129,54 @@ where years is not null
 select * from company_year_rank
 where ranking <= 5;
 ```
+How It Works Overall
+1. The first CTE (Company_year) aggregates the total layoffs for each company in each year.
+2. The second CTE (company_year_rank) calculates the rank of each company by their layoffs, grouped by year.
+3. The final query filters the data to show only the top 5 companies with the most layoffs for each year.
+
+Query Explanation
+1. First CTE: Company_year
+```
+WITH Company_year (company, years, total_laid_off) AS (
+    SELECT 
+        company, 
+        YEAR(`date`) AS years, 
+        SUM(total_laid_off) AS total_laid_off
+    FROM layoffs_staging2
+    GROUP BY company, YEAR(`date`)
+)
+
+```
+Purpose: Summarizes layoffs by company and year.
+Breakdown:
+- YEAR('date') AS years: Extracts the year from the 'date' column.
+- SUM(total_laid_off) AS total_laid_off: Sums the total layoffs for each company in each year.
+- GROUP BY company, YEAR('date'): Groups the data by company and year to ensure the aggregation SUM is performed for each company-year combination.
+
+2. Second CTE: company_year_rank
+```
+, company_year_rank AS (
+    SELECT 
+        *, 
+        DENSE_RANK() OVER (PARTITION BY years ORDER BY total_laid_off DESC) AS ranking
+    FROM Company_year
+    WHERE years IS NOT NULL
+)
+
+```
+Purpose: Ranks companies by layoffs within each year.
+Breakdown:
+- DENSE_RANK() OVER (PARTITION BY years ORDER BY total_laid_off DESC):
+  - Assigns a rank to each company based on their total layoffs within the same year (PARTITION BY years).
+  - Companies with the same total_laid_off receive the same rank (dense ranking skips numbers, unlike RANK).
+- WHERE years IS NOT NULL: Ensures that only rows with valid years are included.
+
+3. Final Query:
+```
+  SELECT * 
+  FROM company_year_rank
+  WHERE ranking <= 5;
+```
+Purpose: Filters the results to show only the top 5 companies for each year (based on ranking).
+Breakdown:
+- WHERE ranking <= 5: Includes only rows where the rank is 5 or less, effectively limiting results to the top 5 companies with the most layoffs per year.
